@@ -237,7 +237,54 @@ cat /tmp/last_code
 
 ---
 
-### 5.3 进阶：自动化脚本封装示例
+### 5.3 核心范式：异步派发任务 + 专属音频保活 (`/dev/keepalive`)
+
+由于快捷指令发送 `tmux send-keys` 仅需毫秒级即可返回（快捷指令命令本身执行极快并立刻结束，此时快捷指令自带的音频保活也会随之释放），为了**让 tmux 内部正在运行的长任务（如 `python run_task.py`）在后台持续拥有音频保活**，最经典的黄金组合模式如下：
+
+#### 快捷指令中下发执行：
+```sh
+tmux send-keys -t agent "echo 1 > /dev/keepalive && python run_task.py; echo 0 > /dev/keepalive" C-m
+```
+
+> 💡 **原理解析**：
+> 1. `tmux send-keys -t agent "..." C-m`：将字符串和回车（`C-m` 即 Carriage Return / Enter）送入 `agent` 会话的活动窗口。
+> 2. `echo 1 > /dev/keepalive`：任务刚开始时，写入字符设备开启宿主机的音频静音播放，锁定后台常驻权限。
+> 3. `&& python run_task.py;`：在拥有音频保活的环境下持续稳定运行你的 Python/Shell 任务。
+> 4. `echo 0 > /dev/keepalive`：无论任务成功还是失败，执行完毕后安全释放保活，系统恢复休眠省电状态。
+
+---
+
+### 5.4 如何查看会话状态与实时输出？
+
+当你的长任务在后台 tmux 中执行时，有以下几种主要方式进行监控、查看与调试：
+
+#### 方式 A：外部 Agent / 快捷指令抓屏查看（无感静默）
+无需打开 iSH 界面，通过下发快捷指令读取输出：
+```sh
+# 1. 抓取终端当前可视屏幕内容
+tmux capture-pane -t agent -p
+
+# 2. 抓取包含历史回滚缓冲区的最近 100 行输出
+tmux capture-pane -t agent -p -S -100
+
+# 3. 检查任务是否已经结束（返回 sh / ash 说明任务已跑完，等待新命令）
+tmux display-message -t agent -p '#{pane_current_command}'
+```
+
+#### 方式 B：打开 iSH App 交互式前台查看
+当你需要人工干预、实时看动态日志或手动交互时：
+1. 打开 iOS 桌面的 **iSH** 应用。
+2. 运行附加命令接入会话：
+   ```sh
+   tmux attach -t agent
+   ```
+3. 退出查看但保持后台继续运行（Detach 会话）：
+   - 快捷键：按下 `Ctrl + b`，松开后按 `d`。
+   - 会话将继续在后台保持运行，不会被中断。
+
+---
+
+### 5.5 进阶：自动化调度脚本封装示例
 
 你可以在 iSH 的 `/usr/local/bin/agent-exec` 放置如下轻量调度脚本：
 
@@ -252,13 +299,13 @@ tmux has-session -t agent 2>/dev/null || tmux new-session -d -s agent -n worker
 # 清除旧状态
 rm -f /tmp/agent_status /tmp/agent_output
 
-# 执行命令并重定向输出同时保留退出码
-tmux send-keys -t agent:worker "$CMD > /tmp/agent_output 2>&1; echo \$? > /tmp/agent_status" Enter
+# 执行命令：带独立保活并捕获状态
+tmux send-keys -t agent:worker "echo 1 > /dev/keepalive; ($CMD) > /tmp/agent_output 2>&1; echo \$? > /tmp/agent_status; echo 0 > /dev/keepalive" C-m
 ```
 
 这样你的快捷指令只需触发：
 ```sh
-agent-exec "git pull && make"
+agent-exec "python run_task.py"
 ```
 外部 Agent 可以随时通过 `cat /tmp/agent_output` 和 `cat /tmp/agent_status` 查询当前状态，完全不阻塞快捷指令通道！
 
