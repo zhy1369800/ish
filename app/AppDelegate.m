@@ -18,6 +18,8 @@
 #import "SceneDelegate.h"
 #import "PasteboardDevice.h"
 #import "LocationDevice.h"
+#import "KeepAliveDevice.h"
+#import "URLHandler.h"
 #import "NSObject+SaneKVO.h"
 #import "Roots.h"
 #import "TerminalViewController.h"
@@ -105,6 +107,11 @@ static NSString *const kSkipStartupMessage = @"Skip Startup Message";
     if (err != 0)
         return err;
     generic_mknodat(AT_PWD, "/dev/location", S_IFCHR|0666, dev_make(DYN_DEV_MAJOR, DEV_LOCATION_MINOR));
+
+    err = dyn_dev_register(&keepalive_dev, DEV_CHAR, DYN_DEV_MAJOR, DEV_KEEPALIVE_MINOR);
+    if (err != 0)
+        return err;
+    generic_mknodat(AT_PWD, "/dev/keepalive", S_IFCHR|0666, dev_make(DYN_DEV_MAJOR, DEV_KEEPALIVE_MINOR));
 
     do_mount(&procfs, "proc", "/proc", "", 0);
     do_mount(&devptsfs, "devpts", "/dev/pts", "", 0);
@@ -331,6 +338,10 @@ void NetworkReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 - (void)applicationDidEnterBackground:(UIApplication *)application {
     if (self.exiting)
         exit(0);
+}
+
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    return [[URLHandler sharedHandler] handleURL:url];
 }
 
 @end

@@ -7,6 +7,7 @@
 
 #import "SceneDelegate.h"
 #import "AboutViewController.h"
+#import "URLHandler.h"
 
 TerminalViewController *currentTerminalViewController = NULL;
 
@@ -62,6 +63,12 @@ static NSString *const TerminalUUID = @"TerminalUUID";
 
     if (currentTerminalViewController == terminalViewController) {
         currentTerminalViewController = NULL;
+    }
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts {
+    for (UIOpenURLContext *context in URLContexts) {
+        [[URLHandler sharedHandler] handleURL:context.URL];
     }
 }
 
