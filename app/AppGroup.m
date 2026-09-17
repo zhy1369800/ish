@@ -98,10 +98,25 @@ static NSDictionary *AppEntitlements(void) {
 }
 
 NSArray<NSString *> *CurrentAppGroups(void) {
-    return AppEntitlements()[@"com.apple.security.application-groups"];
+    id groups = AppEntitlements()[@"com.apple.security.application-groups"];
+    if ([groups isKindOfClass:[NSArray class]]) {
+        return groups;
+    }
+    return nil;
 }
 
 NSURL *ContainerURL(void) {
-    NSString *appGroup = CurrentAppGroups()[0];
-    return [NSFileManager.defaultManager containerURLForSecurityApplicationGroupIdentifier:appGroup];
+    NSArray<NSString *> *groups = CurrentAppGroups();
+    if (groups && groups.count > 0) {
+        NSString *appGroup = groups[0];
+        if (appGroup && appGroup.length > 0) {
+            NSURL *groupURL = [NSFileManager.defaultManager containerURLForSecurityApplicationGroupIdentifier:appGroup];
+            if (groupURL != nil) {
+                return groupURL;
+            }
+        }
+    }
+    // Fallback to app Documents directory when App Group is unavailable (e.g. sideloaded via Sideloadly with a free account)
+    NSURL *documentsURL = [NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+    return documentsURL;
 }
