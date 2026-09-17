@@ -69,13 +69,27 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            VALIDATE_PRODUCT=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0
 
-          cd build/DerivedData/Build/Products/Release-iphoneos
+          # 自动定位构建产物 iSH.app
+          APP_PATH=$(find build/DerivedData/Build/Products -name "iSH.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ 未找到 iSH.app"
+            exit 1
+          fi
+          echo "✅ 找到构建产物: $APP_PATH"
+
+          # 在仓库根目录打包 IPA
+          rm -rf Payload
           mkdir -p Payload
-          cp -r iSH.app Payload/
-          zip -qr "../../../../iSH_${VERSION}.ipa" Payload
-          cd -
+          cp -r "$APP_PATH" Payload/
+          zip -qr "iSH_${VERSION}.ipa" Payload
+          rm -rf Payload
+
+          echo "✅ 生成 IPA 完成:"
+          ls -lh iSH_*.ipa
 
       - name: 🚀 发布到 Release
         if: ${{ github.event.inputs.publish_release == 'true' && github.event.inputs.release_tag != '' }}
