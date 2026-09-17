@@ -69,7 +69,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            VALIDATE_PRODUCT=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0
 
           cd build/DerivedData/Build/Products/Release-iphoneos
           mkdir -p Payload

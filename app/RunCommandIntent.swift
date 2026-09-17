@@ -36,15 +36,16 @@ struct RunCommandIntent: AppIntent {
         let timeout = Double(timeoutSeconds ?? 300)
         let cwd = (workingDirectory?.isEmpty == false) ? workingDirectory : "/root"
 
-        return try await withCheckedThrowingContinuation { continuation in
+        let resultString: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
             CommandRunner.sharedRunner().runCommand(command, cwd: cwd, timeout: timeout) { exitCode, output, error in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {
-                    continuation.resume(returning: .result(value: output ?? ""))
+                    continuation.resume(returning: output ?? "")
                 }
             }
         }
+        return .result(value: resultString)
     }
 }
 
