@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iSH 自动化增强与 Agent 闭环架构全景回顾</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-purple: #bc8cff;
+      --accent-orange: #d29922;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    pre {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+    }
+    code {
+      color: #79c0ff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="p-6 md:p-12 max-w-5xl mx-auto antialiased">
+
+  <!-- Header -->
+  <header class="border-b border-[#30363d] pb-8 mb-10">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-3xl">🚀</span>
+      <h1 class="text-3xl font-bold text-white tracking-tight">iSH 自动化增强与 Agent 闭环全景技术档案</h1>
+    </div>
+    <p class="text-[#8b949e] text-base">
+      涵盖 iOS 快捷指令执行、按需无声音频保活、虚拟 Linux 字符设备、Tmux 跨进程共享与 Agent 闭环决策的全生命周期总结。
+    </p>
+  </header>
+
+  <!-- Navigation / Quick Facts -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+      <div class="text-[#8b949e] text-xs font-semibold uppercase">核心定位</div>
+      <div class="text-lg font-bold text-white mt-1">本地个人 Agent</div>
+      <div class="text-xs text-[#3fb950] mt-1">✓ 无需上架 / 无审核束缚</div>
+    </div>
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+      <div class="text-[#8b949e] text-xs font-semibold uppercase">触发机制</div>
+      <div class="text-lg font-bold text-white mt-1">Shortcuts & URL</div>
+      <div class="text-xs text-[#58a6ff] mt-1">App Intent + x-callback</div>
+    </div>
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+      <div class="text-[#8b949e] text-xs font-semibold uppercase">保活策略</div>
+      <div class="text-lg font-bold text-white mt-1">按需无声音频</div>
+      <div class="text-xs text-[#bc8cff] mt-1">任务开始即启，结束即停</div>
+    </div>
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+      <div class="text-[#8b949e] text-xs font-semibold uppercase">交互与状态</div>
+      <div class="text-lg font-bold text-white mt-1">Tmux 进程共享</div>
+      <div class="text-xs text-[#d29922] mt-1">Socket IPC + 抓屏决策</div>
+    </div>
+  </div>
+
+  <!-- Timeline & Conversations -->
+  <div class="space-y-10">
+
+    <!-- 阶段 1: 需求诞生与架构构想 -->
+    <section class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="badge bg-[#1f6feb]/20 text-[#58a6ff] border border-[#1f6feb]/30">Phase 1</span>
+        <h2 class="text-xl font-bold text-white">需求诞生：外部通知驱动 Agent 与按需保活</h2>
+      </div>
+      <div class="text-[#c9d1d9] space-y-3 text-sm leading-relaxed">
+        <p><strong>用户最初提问：</strong>想要开发一个外部 Agent App，当收到特定通知事件时自动触发 iOS 快捷指令，在 iSH 终端中静默执行脚本或命令，并希望用无声音频进行后台保活。</p>
+        <p><strong>核心共识：</strong></p>
+        <ul class="list-disc list-inside space-y-1 text-[#8b949e] pl-2">
+          <li>保活必须是<strong class="text-white">“有任务才开，无任务/结束就关”</strong>，极致省电，不影响日常待机。</li>
+          <li>采用音频混音模式（<code>MixWithOthers</code>），音量调至微弱/静音，不抢占音乐、播客或电话。</li>
+          <li>纯自用，不上架 App Store，因此可以使用 iOS 后台音频权限作为保活抓手。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 阶段 2: 架构落地方案 -->
+    <section class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="badge bg-[#238636]/20 text-[#3fb950] border border-[#238636]/30">Phase 2</span>
+        <h2 class="text-xl font-bold text-white">架构实现：十个核心模块构建</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+        <div class="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
+          <div class="text-[#58a6ff] font-bold mb-1">AudioKeepAliveManager</div>
+          <div class="text-[#8b949e]">内存中生成 44 字节 PCM 无声 WAV，引用计数管理，电话/中断激进恢复。</div>
+        </div>
+        <div class="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
+          <div class="text-[#58a6ff] font-bold mb-1">CommandRunner</div>
+          <div class="text-[#8b949e]">独立分配 /dev/pts/N 虚拟终端，fork init_child，SIGKILL 超时截杀与 stdout 收集。</div>
+        </div>
+        <div class="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
+          <div class="text-[#58a6ff] font-bold mb-1">RunCommandIntent.swift</div>
+          <div class="text-[#8b949e]">iOS 16 AppIntents，设置 openAppWhenRun = false，实现无感静默后台执行。</div>
+        </div>
+        <div class="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
+          <div class="text-[#58a6ff] font-bold mb-1">/dev/keepalive 虚拟设备</div>
+          <div class="text-[#8b949e]">注册主设备号 240、次设备号 2，使 Alpine Linux Shell 能直接 echo 1/0 控制宿主机保活。</div>
+        </div>
+        <div class="bg-[#0d1117] p-3 rounded-lg border border-[#30363d] md:col-span-2">
+          <div class="text-[#58a6ff] font-bold mb-1">URLHandler</div>
+          <div class="text-[#8b949e]">支持 ish://run 异步调用及标准 ish://x-callback-url/run 成功/失败全自动回调响应。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 阶段 3: 代码审查与两次迭代优化 -->
+    <section class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="badge bg-[#8957e5]/20 text-[#bc8cff] border border-[#8957e5]/30">Phase 3</span>
+        <h2 class="text-xl font-bold text-white">深度代码审查与质量加固</h2>
+      </div>
+      <div class="space-y-3 text-sm">
+        <div class="border-l-2 border-[#58a6ff] pl-3 py-1">
+          <div class="font-bold text-white">第一轮修复 (4 个关键问题)：</div>
+          <p class="text-[#8b949e] text-xs mt-1">1. Swift 桥接拼写修复；2. 音频停止竞态双重校验；3. PID 1 冷启动 5 秒轮询重试；4. 超时处理加入 SIGKILL 强杀防止僵尸进程。</p>
+        </div>
+        <div class="border-l-2 border-[#3fb950] pl-3 py-1">
+          <div class="font-bold text-white">第二轮审查与决议：</div>
+          <p class="text-[#8b949e] text-xs mt-1">1. 移除 Intent 上的 <code>@MainActor</code>，与 UI 主线程彻底解耦；2. 补全 <code>do_execve</code> 极端失败路径下的孤儿 task 释放；3. 确认保持激进中断恢复策略以获得更强保活。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 阶段 4: 核心理论解惑 - Tmux 与进程间共享 -->
+    <section class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="badge bg-[#9e6a03]/20 text-[#d29922] border border-[#9e6a03]/30">Phase 4</span>
+        <h2 class="text-xl font-bold text-white">核心理论突破：Tmux 作为“进程间共享黑板”</h2>
+      </div>
+      <div class="text-[#c9d1d9] space-y-4 text-sm leading-relaxed">
+        <p><strong>关键质疑：</strong>快捷指令每次通过 <code>become_new_init_child()</code> 在新的独立子进程里跑命令，Tmux 怎么跨越进程拿到结果？</p>
+        <div class="bg-[#0d1117] p-4 rounded-xl border border-[#30363d]">
+          <div class="text-xs font-semibold text-[#8b949e] mb-2 uppercase">Tmux Client-Server 通信原理</div>
+          <pre><code>[Linux Kernel PID 1]
+   │
+   ├── 常驻守护服务: 【tmux server】 (PID 120)
+   │     ├── 管理终端虚拟屏幕缓冲区 (Screen Buffer)
+   │     └── 运行长任务: python run_task.py (输出打在缓冲区中)
+   │
+   ▲
+   │ 跨进程 Unix Domain Socket (/tmp/tmux-0/default)
+   ▼
+   │
+   └── 快捷指令每次调用的轻量子进程 (PID 350)
+         ├── 充当“遥控器 (tmux client)”
+         ├── tmux send-keys: 告诉 server 敲入命令
+         └── tmux capture-pane: 向 server 索取屏幕字符并输出</code></pre>
+        </div>
+        <div class="p-3 bg-[#388bfd]/10 border border-[#388bfd]/30 rounded-lg text-xs">
+          <strong>核心结论：</strong> <code>tmux server</code> 本质上是进程间共享的“公共黑板”。无论外部有多少个独立子进程，大家都通过同一个本地 Socket 读写黑板，实现命令注入与抓屏决策闭环。
+        </div>
+      </div>
+    </section>
+
+    <!-- 阶段 5: 实用命令集锦 -->
+    <section class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="badge bg-[#1f6feb]/20 text-[#58a6ff] border border-[#1f6feb]/30">Phase 5</span>
+        <h2 class="text-xl font-bold text-white">实战命令宝典</h2>
+      </div>
+      <div class="space-y-4 text-xs font-mono">
+        <div>
+          <div class="text-[#8b949e] mb-1 font-sans font-bold">1. 快捷指令派发长任务（带独立保活黄金模板）：</div>
+          <pre><code>tmux send-keys -t agent "echo 1 > /dev/keepalive && python run_task.py; echo 0 > /dev/keepalive" C-m</code></pre>
+        </div>
+        <div>
+          <div class="text-[#8b949e] mb-1 font-sans font-bold">2. Agent 无感抓屏（读取最近 100 行）：</div>
+          <pre><code>tmux capture-pane -t agent -p -S -100</code></pre>
+        </div>
+        <div>
+          <div class="text-[#8b949e] mb-1 font-sans font-bold">3. 检测长任务是否执行完毕（如果是 sh/ash 代表已完结）：</div>
+          <pre><code>tmux display-message -t agent -p '#{pane_current_command}'</code></pre>
+        </div>
+        <div>
+          <div class="text-[#8b949e] mb-1 font-sans font-bold">4. 前台人工介入与后台脱离：</div>
+          <pre><code>tmux attach -t agent
+# 退出查看并保持后台运行: 按下 Ctrl + b，松开后按 d</code></pre>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-12 pt-6 border-t border-[#30363d] text-center text-[#8b949e] text-xs">
+    项目全量代码与使用文档已同步提交并推送至 GitHub <code>origin/my-branch</code>。<br>
+    生成时间: 2026-09-17 · iSH 自动化增强工程档案
+  </footer>
+
+</body>
+</html>
