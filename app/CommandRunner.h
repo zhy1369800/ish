@@ -11,7 +11,7 @@ typedef void (^CommandCompletionBlock)(int exitCode, NSString * _Nullable output
 
 @interface CommandRunner : NSObject
 
-+ (instancetype)sharedRunner;
++ (instancetype)sharedRunner NS_SWIFT_NAME(shared());
 
 /// Executes a shell command asynchronously in the iSH Linux environment.
 /// Automatically manages AudioKeepAliveManager for the duration of execution.

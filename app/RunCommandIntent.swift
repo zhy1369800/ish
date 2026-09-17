@@ -37,7 +37,7 @@ struct RunCommandIntent: AppIntent {
         let cwd = (workingDirectory?.isEmpty == false) ? workingDirectory : "/root"
 
         let resultString: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-            CommandRunner.sharedRunner().runCommand(command, cwd: cwd, timeout: timeout) { exitCode, output, error in
+            CommandRunner.shared().runCommand(command, cwd: cwd, timeout: timeout) { exitCode, output, error in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {
